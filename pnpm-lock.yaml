@@ -7,19 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      fflate:
-        specifier: ^0.8.2
-        version: 0.8.3
-      gifenc:
-        specifier: ^1.0.3
-        version: 1.0.3
-      preact:
-        specifier: 10.29.4
-        version: 10.29.4
-      zxing-wasm:
-        specifier: ^3.1.0
-        version: 3.1.0(@types/emscripten@1.41.5)
     devDependencies:
       '@preact/preset-vite':
         specifier: '2'
@@ -42,6 +29,51 @@ importers:
       vitest:
         specifier: '3'
         version: 3.2.7(@types/node@26.1.0)(happy-dom@20.10.6)
+
+  apps/web:
+    dependencies:
+      '@raptorqr/core':
+        specifier: workspace:*
+        version: link:../../packages/raptorqr-core
+      '@raptorqr/wasm':
+        specifier: workspace:*
+        version: link:../../packages/raptorqr-wasm
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
+      preact:
+        specifier: 10.29.4
+        version: 10.29.4
+    devDependencies:
+      '@preact/preset-vite':
+        specifier: '2'
+        version: 2.10.5(@babel/core@7.29.7)(preact@10.29.4)(rollup@4.62.2)(vite@6.4.3(@types/node@26.1.0))
+
+  packages/raptorqr-cli:
+    dependencies:
+      '@raptorqr/core':
+        specifier: workspace:*
+        version: link:../raptorqr-core
+      '@raptorqr/wasm':
+        specifier: workspace:*
+        version: link:../raptorqr-wasm
+
+  packages/raptorqr-core:
+    dependencies:
+      '@raptorqr/wasm':
+        specifier: workspace:*
+        version: link:../raptorqr-wasm
+      fflate:
+        specifier: ^0.8.2
+        version: 0.8.3
+      gifenc:
+        specifier: ^1.0.3
+        version: 1.0.3
+      zxing-wasm:
+        specifier: ^3.1.0
+        version: 3.1.0(@types/emscripten@1.41.5)
+
+  packages/raptorqr-wasm: {}
 
 packages:
 

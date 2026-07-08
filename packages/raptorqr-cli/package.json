@@ -1,0 +1,24 @@
+{
+  "name": "@raptorqr/cli",
+  "version": "0.1.0",
+  "description": "RaptorQR command line interface",
+  "type": "module",
+  "bin": {
+    "raptorqr": "dist/raptorqr.js"
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@raptorqr/core": "workspace:*",
+    "@raptorqr/wasm": "workspace:*"
+  },
+  "scripts": {
+    "build": "esbuild src/raptorqr.ts --bundle --platform=node --target=node18 --outfile=dist/raptorqr.js --format=esm --external:node:* && node scripts/copy-wasm-assets.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cli": "bun run src/raptorqr.ts"
+  }
+}

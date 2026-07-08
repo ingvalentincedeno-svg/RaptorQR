@@ -1,0 +1,63 @@
+{
+  "name": "@raptorqr/core",
+  "version": "0.1.0",
+  "description": "Protocol, packetization, FEC, QR encode/decode APIs for RaptorQR",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    },
+    "./browser": {
+      "types": "./src/browser.ts",
+      "import": "./src/browser.ts"
+    },
+    "./node": {
+      "types": "./src/node.ts",
+      "import": "./src/node.ts"
+    },
+    "./fec/*": {
+      "types": "./src/fec/*.ts",
+      "import": "./src/fec/*.ts"
+    },
+    "./gif/*": {
+      "types": "./src/gif/*.ts",
+      "import": "./src/gif/*.ts"
+    },
+    "./preprocess/*": {
+      "types": "./src/preprocess/*.ts",
+      "import": "./src/preprocess/*.ts"
+    },
+    "./protocol/*": {
+      "types": "./src/protocol/*.ts",
+      "import": "./src/protocol/*.ts"
+    },
+    "./qr/*": {
+      "types": "./src/qr/*.ts",
+      "import": "./src/qr/*.ts"
+    },
+    "./reconstruct/*": {
+      "types": "./src/reconstruct/*.ts",
+      "import": "./src/reconstruct/*.ts"
+    },
+    "./sender/*": {
+      "types": "./src/sender/*.ts",
+      "import": "./src/sender/*.ts"
+    },
+    "./wasm/*": {
+      "types": "./src/wasm/*.ts",
+      "import": "./src/wasm/*.ts"
+    }
+  },
+  "dependencies": {
+    "@raptorqr/wasm": "workspace:*",
+    "fflate": "^0.8.2",
+    "gifenc": "^1.0.3",
+    "zxing-wasm": "^3.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}
