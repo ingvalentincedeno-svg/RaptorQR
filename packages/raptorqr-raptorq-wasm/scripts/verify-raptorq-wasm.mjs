@@ -7,13 +7,13 @@ import init, {
   RaptorQDecoder,
   encode_packets,
   initSync,
-} from '../src/raptorq/wasm/qrstream_raptorq_wasm.js';
+} from '../src/wasm/raptorqr_raptorq_wasm.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const wasmPath = resolve(
   repoRoot,
-  'src/raptorq/wasm/qrstream_raptorq_wasm_bg.wasm',
+  'src/wasm/raptorqr_raptorq_wasm_bg.wasm',
 );
 
 const transportPayloadSize = 256;

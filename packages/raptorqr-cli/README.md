@@ -37,8 +37,8 @@ dist/raptorqr.js
 The build also copies required WASM sidecars into `dist/`:
 
 ```text
-qrstream_fast_qr_wasm_bg.wasm
-qrstream_raptorq_wasm_bg.wasm
+raptorqr_fast_qr_wasm_bg.wasm
+raptorqr_raptorq_wasm_bg.wasm
 ```
 
 Run the repository build before publishing:

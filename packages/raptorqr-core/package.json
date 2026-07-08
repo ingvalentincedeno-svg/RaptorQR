@@ -1,7 +1,8 @@
 {
   "name": "@raptorqr/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Protocol, packetization, FEC, QR encode/decode APIs for RaptorQR",
+  "license": "MIT",
   "type": "module",
   "exports": {
     ".": {
@@ -49,6 +50,9 @@
       "import": "./src/wasm/*.ts"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "src/browser.ts",
     "src/node.ts",
@@ -66,7 +70,8 @@
     "LICENSE"
   ],
   "dependencies": {
-    "@raptorqr/wasm": "workspace:*",
+    "@raptorqr/fast-qr-wasm": "workspace:*",
+    "@raptorqr/raptorq-wasm": "workspace:*",
     "fflate": "^0.8.2",
     "gifenc": "^1.0.3",
     "zxing-wasm": "^3.1.0"

@@ -3,4 +3,4 @@ export {
   initSync,
   RaptorQDecoder,
   encode_packets,
-} from './wasm/qrstream_raptorq_wasm.js';
+} from './wasm/raptorqr_raptorq_wasm.js';

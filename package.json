@@ -10,10 +10,13 @@
   },
   "scripts": {
     "dev:web": "pnpm --filter @raptorqr/web dev",
-    "build": "pnpm --filter @raptorqr/wasm build && pnpm --filter @raptorqr/core build && pnpm --filter @raptorqr/cli build && pnpm --filter @raptorqr/web build",
-    "test": "pnpm --filter @raptorqr/wasm test && pnpm --filter @raptorqr/core test && pnpm --filter @raptorqr/cli test && pnpm --filter @raptorqr/web test",
+    "build": "pnpm --filter @raptorqr/fast-qr-wasm build && pnpm --filter @raptorqr/raptorq-wasm build && pnpm --filter @raptorqr/core build && pnpm --filter @raptorqr/cli build && pnpm --filter @raptorqr/web build",
+    "test": "pnpm --filter @raptorqr/fast-qr-wasm test && pnpm --filter @raptorqr/raptorq-wasm test && pnpm --filter @raptorqr/core test && pnpm --filter @raptorqr/cli test && pnpm --filter @raptorqr/web test",
+    "test:smoke": "vitest run smoke.test.ts --environment node",
+    "benchmark": "vitest run benchmark.test.ts --environment happy-dom",
+    "benchmark:final": "vitest run benchmark.final.test.ts --environment happy-dom",
     "test:watch": "pnpm --filter @raptorqr/web test:watch",
-    "verify:raptorq-wasm": "pnpm --filter @raptorqr/wasm verify:raptorq"
+    "verify:raptorq-wasm": "pnpm --filter @raptorqr/raptorq-wasm verify:raptorq"
   },
   "keywords": [
     "qr",
@@ -29,7 +32,10 @@
   "license": "MIT",
   "devDependencies": {
     "@preact/preset-vite": "2",
-    "@types/bun": "latest",
+    "@raptorqr/core": "workspace:*",
+    "@raptorqr/fast-qr-wasm": "workspace:*",
+    "@raptorqr/raptorq-wasm": "workspace:*",
+    "@types/node": "26.1.0",
     "esbuild": "^0.28.1",
     "happy-dom": "^20.10.6",
     "typescript": "5.7.3",

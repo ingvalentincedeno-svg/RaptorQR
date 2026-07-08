@@ -4,7 +4,7 @@ Transfer files and text between devices by displaying high-throughput animated Q
 
 Everything runs locally in the browser or terminal: no upload server, no Bluetooth, no cable.
 
-RaptorQR is a project inspired by [hermitm0nk/qr-stream](https://github.com/hermitm0nk/qr-stream). The project has since become a substantial rewrite of the core transfer pipeline and user experience: FEC, QR rendering, worker scheduling, scanner integration, sender/receiver UI, CLI packaging, and the repo layout have all been rebuilt around a higher-throughput, production-ready architecture.
+RaptorQR started from an earlier open-source QR streaming prototype and has since become a substantial rewrite of the core transfer pipeline and user experience: FEC, QR rendering, worker scheduling, scanner integration, sender/receiver UI, CLI packaging, and the repo layout have all been rebuilt around a higher-throughput, production-ready architecture.
 
 Live demo: https://qr.linkto.host/
 
@@ -46,7 +46,8 @@ The current RaptorQ WASM path is intended to be production-ready for local offli
 
 ```text
 packages/raptorqr-core   protocol, packetization, FEC, QR encode/decode APIs
-packages/raptorqr-wasm   fast_qr and RaptorQ WASM artifacts plus Colab scripts
+packages/raptorqr-fast-qr-wasm   fast_qr WASM renderer artifacts plus Colab script
+packages/raptorqr-raptorq-wasm   RaptorQ WASM codec artifacts plus Colab script
 packages/raptorqr-cli    raptorqr terminal CLI
 apps/web                 Preact/Vite web app
 ```
@@ -124,7 +125,7 @@ Run tests:
 pnpm test
 ```
 
-Run the CLI from source:
+Run the CLI locally. This builds the Node bundle, then starts it:
 
 ```bash
 pnpm --filter @raptorqr/cli cli
@@ -171,15 +172,15 @@ The CLI copies its required WASM sidecars into the same `dist/` directory.
 The generated artifacts live under:
 
 ```text
-packages/raptorqr-wasm/src/fast_qr/wasm
-packages/raptorqr-wasm/src/raptorq/wasm
+packages/raptorqr-fast-qr-wasm/src/wasm
+packages/raptorqr-raptorq-wasm/src/wasm
 ```
 
 The build scripts are:
 
 ```text
-packages/raptorqr-wasm/src/fast_qr/build_fast_qr_wasm_colab.py
-packages/raptorqr-wasm/src/raptorq/build_raptorq_wasm_colab.py
+packages/raptorqr-fast-qr-wasm/src/build_fast_qr_wasm_colab.py
+packages/raptorqr-raptorq-wasm/src/build_raptorq_wasm_colab.py
 ```
 
 You can paste the scripts into a Colab notebook to build the WASM artifacts. The scripts will download and build the upstream Rust dependencies, then compile them to WASM.

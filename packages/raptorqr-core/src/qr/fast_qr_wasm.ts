@@ -12,8 +12,8 @@
  * @module
  */
 
-import init, { QrRenderer } from '@raptorqr/wasm/fast-qr';
-import type { InitOutput } from '@raptorqr/wasm/fast-qr';
+import init, { QrRenderer } from '@raptorqr/fast-qr-wasm';
+import type { InitOutput } from '@raptorqr/fast-qr-wasm';
 
 // ─── Module-level singleton ───────────────────────────────────────────────────
 
@@ -25,8 +25,8 @@ let wasmOutput: InitOutput | null = null;
 export function fastQrUnavailableMessage(): string {
   return (
     'fast_qr WASM artifacts are not installed. ' +
-    'Run packages/raptorqr-wasm/src/fast_qr/build_fast_qr_wasm_colab.py in Google Colab, ' +
-    'then copy the generated files into packages/raptorqr-wasm/src/fast_qr/wasm.'
+    'Run packages/raptorqr-fast-qr-wasm/src/build_fast_qr_wasm_colab.py in Google Colab, ' +
+    'then copy the generated files into packages/raptorqr-fast-qr-wasm/src/wasm.'
   );
 }
 

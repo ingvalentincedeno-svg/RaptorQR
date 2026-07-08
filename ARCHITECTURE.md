@@ -13,9 +13,13 @@ packages/raptorqr-core
   src/gif           GIF parse/render helpers
   src/reconstruct   payload assembly
 
-packages/raptorqr-wasm
-  src/fast_qr       fast_qr wasm-bindgen artifacts and Colab script
-  src/raptorq       cberner/raptorq wasm-bindgen artifacts and Colab script
+packages/raptorqr-fast-qr-wasm
+  src/wasm          fast_qr wasm-bindgen artifacts
+  src/build_fast_qr_wasm_colab.py
+
+packages/raptorqr-raptorq-wasm
+  src/wasm          cberner/raptorq wasm-bindgen artifacts
+  src/build_raptorq_wasm_colab.py
 
 packages/raptorqr-cli
   src/raptorqr.ts        CLI entrypoint
@@ -33,9 +37,11 @@ apps/web
 
 `@raptorqr/core` owns protocol behavior and public transfer APIs. It exports environment-neutral modules from `@raptorqr/core`, browser wrappers from `@raptorqr/core/browser`, and Node/CLI wrappers from `@raptorqr/core/node`.
 
-`@raptorqr/wasm` owns generated WASM artifacts. Core imports fast_qr through `@raptorqr/wasm/fast-qr` and RaptorQ through `@raptorqr/wasm/raptorq`.
+`@raptorqr/fast-qr-wasm` owns the generated fast_qr renderer artifacts. Core imports it directly for browser and Node QR rendering.
 
-`@raptorqr/cli` depends on core and wasm. It bundles to `packages/raptorqr-cli/dist/raptorqr.js` and copies required WASM sidecars next to the bundle.
+`@raptorqr/raptorq-wasm` owns the generated RaptorQ codec artifacts. Core imports it directly for the primary FEC path.
+
+`@raptorqr/cli` depends on core and the split WASM packages. It bundles to `packages/raptorqr-cli/dist/raptorqr.js` and copies required WASM sidecars next to the bundle.
 
 `@raptorqr/web` is private. It owns Vite, Preact UI, workers, and app-local worker pools. App-local `@/*` imports must not leak into packages.
 
@@ -74,6 +80,7 @@ pnpm dev:web
 The test split follows ownership:
 
 * core: protocol, packetization, FEC, reconstruction
-* wasm: generated RaptorQ artifact verification
+* fast-qr-wasm: generated fast_qr type/build verification
+* raptorq-wasm: generated RaptorQ artifact verification
 * cli: terminal raster and CLI encode pipeline
 * web: browser QR/GIF/ZXing/worker integration

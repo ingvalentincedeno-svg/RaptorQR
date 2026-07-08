@@ -3,8 +3,8 @@
 
 This script is intended for Google Colab so the main development machine does
 not need a Rust toolchain. It can be pasted directly into a Colab cell. If a
-RaptorQR repo is present, artifacts are copied into packages/raptorqr-wasm/src/raptorq/wasm; otherwise
-they are written to /content/qrstream_raptorq_wasm_artifacts and zipped.
+RaptorQR repo is present, artifacts are copied into packages/raptorqr-raptorq-wasm/src/wasm; otherwise
+they are written to /content/raptorqr_raptorq_wasm_artifacts and zipped.
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ from pathlib import Path
 
 
 CRATE_VERSION = "2.0.1"
-BUILD_DIR = Path("/content/qrstream_raptorq_wasm_build")
-PACKAGE_NAME = "qrstream_raptorq_wasm"
+BUILD_DIR = Path("/content/raptorqr_raptorq_wasm_build")
+PACKAGE_NAME = "raptorqr_raptorq_wasm"
 
 
 WRAPPER_CARGO_TOML = f"""\
@@ -192,15 +192,15 @@ def find_repo_root() -> Path | None:
         candidates.append(Path(env_repo).expanduser())
 
     for candidate in candidates:
-        if candidate and (candidate / "packages" / "raptorqr-wasm" / "src" / "raptorq").exists() and (candidate / "pnpm-workspace.yaml").exists():
+        if candidate and (candidate / "packages" / "raptorqr-raptorq-wasm" / "src").exists() and (candidate / "pnpm-workspace.yaml").exists():
             return candidate.resolve()
     return None
 
 
 def default_output_dir(repo_root: Path | None) -> Path:
     if repo_root is not None:
-        return repo_root / "packages" / "raptorqr-wasm" / "src" / "raptorq" / "wasm"
-    return Path("/content/qrstream_raptorq_wasm_artifacts")
+        return repo_root / "packages" / "raptorqr-raptorq-wasm" / "src" / "wasm"
+    return Path("/content/raptorqr_raptorq_wasm_artifacts")
 
 
 def ensure_rust_toolchain() -> None:

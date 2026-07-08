@@ -1,12 +1,12 @@
 import init, {
   RaptorQDecoder,
   encode_packets,
-} from '@raptorqr/wasm/raptorq';
+} from '@raptorqr/raptorq-wasm';
 
 let initPromise: Promise<unknown> | null = null;
 
 export function raptorQUnavailableMessage(): string {
-  return 'RaptorQ WASM artifacts are not installed. Run packages/raptorqr-wasm/src/raptorq/build_raptorq_wasm_colab.py in Google Colab, then copy the generated files into packages/raptorqr-wasm/src/raptorq/wasm.';
+  return 'RaptorQ WASM artifacts are not installed. Run packages/raptorqr-raptorq-wasm/src/build_raptorq_wasm_colab.py in Google Colab, then copy the generated files into packages/raptorqr-raptorq-wasm/src/wasm.';
 }
 
 export async function ensureRaptorQWasm(): Promise<void> {

@@ -10,7 +10,7 @@ import {
   QrRenderer,
   initSync,
   type InitOutput,
-} from '@raptorqr/wasm/fast-qr';
+} from '@raptorqr/fast-qr-wasm';
 import {
   DEFAULT_QR_ENCODER,
   formatQREncoder,
@@ -24,9 +24,9 @@ export * from './qr_encoder';
 export const DEFAULT_CLI_QR_ENCODER: QREncoder = DEFAULT_QR_ENCODER;
 
 const FAST_QR_WASM_ASSET = {
-  distFileName: 'qrstream_fast_qr_wasm_bg.wasm',
-  sourceRelativePath: 'packages/raptorqr-wasm/src/fast_qr/wasm/qrstream_fast_qr_wasm_bg.wasm',
-  packageExport: '@raptorqr/wasm/fast-qr/wasm/qrstream_fast_qr_wasm_bg.wasm',
+  distFileName: 'raptorqr_fast_qr_wasm_bg.wasm',
+  sourceRelativePath: 'packages/raptorqr-fast-qr-wasm/src/wasm/raptorqr_fast_qr_wasm_bg.wasm',
+  packageExport: '@raptorqr/fast-qr-wasm/wasm/raptorqr_fast_qr_wasm_bg.wasm',
   envVar: 'RAPTORQR_FAST_QR_WASM',
 };
 

@@ -1,120 +1,199 @@
-/* @ts-self-types="./qrstream_raptorq_wasm.d.ts" */
+/* @ts-self-types="./raptorqr_fast_qr_wasm.d.ts" */
 
-export class RaptorQDecoder {
+export class QrRenderer {
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
         this.__wbg_ptr = 0;
-        RaptorQDecoderFinalization.unregister(this);
+        QrRendererFinalization.unregister(this);
         return ptr;
     }
     free() {
         const ptr = this.__destroy_into_raw();
-        wasm.__wbg_raptorqdecoder_free(ptr, 0);
+        wasm.__wbg_qrrenderer_free(ptr, 0);
     }
     /**
-     * @param {number} data_len
-     * @param {number} max_transport_payload_size
+     * Total capacity of the buffer in bytes (not the valid region — use
+     * `sidePx * sidePx * 4` after `render()` to get the valid byte count).
+     * @returns {number}
      */
-    constructor(data_len, max_transport_payload_size) {
-        try {
-            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            wasm.raptorqdecoder_new(retptr, data_len, max_transport_payload_size);
-            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-            var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-            if (r2) {
-                throw takeObject(r1);
-            }
-            this.__wbg_ptr = r0;
-            RaptorQDecoderFinalization.register(this, this.__wbg_ptr, this);
-            return this;
-        } finally {
-            wasm.__wbindgen_add_to_stack_pointer(16);
-        }
+    buf_len() {
+        const ret = wasm.qrrenderer_buf_len(this.__wbg_ptr);
+        return ret >>> 0;
     }
     /**
-     * @param {Uint8Array} serialized_packet
-     * @returns {any}
+     * Raw pointer to the start of the RGBA buffer inside WASM linear memory.
+     * Valid for the lifetime of this `QrRenderer` instance.
+     * @returns {number}
      */
-    push(serialized_packet) {
+    buf_ptr() {
+        const ret = wasm.qrrenderer_buf_ptr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Side module count from the latest `render_matrix()` call.
+     * @returns {number}
+     */
+    last_matrix_size() {
+        const ret = wasm.qrrenderer_last_matrix_size(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Total capacity of the matrix buffer in bytes.
+     * @returns {number}
+     */
+    matrix_len() {
+        const ret = wasm.qrrenderer_matrix_len(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Raw pointer to the start of the 0/1 module matrix buffer.
+     * @returns {number}
+     */
+    matrix_ptr() {
+        const ret = wasm.qrrenderer_matrix_ptr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Allocate the renderer and its fixed buffers once.
+     */
+    constructor() {
+        const ret = wasm.qrrenderer_new();
+        this.__wbg_ptr = ret;
+        QrRendererFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * Backward-compatible alias for the previous wrapper API.
+     * This is exactly `render_rgba()`: it outputs RGBA pixels into the fixed
+     * RGBA buffer and returns the side pixel count.
+     * @param {Uint8Array} data
+     * @param {number} version
+     * @param {number} ecc
+     * @param {number} scale
+     * @returns {number}
+     */
+    render(data, version, ecc, scale) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            const ptr0 = passArray8ToWasm0(serialized_packet, wasm.__wbindgen_export);
+            const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_export);
             const len0 = WASM_VECTOR_LEN;
-            wasm.raptorqdecoder_push(retptr, this.__wbg_ptr, ptr0, len0);
+            wasm.qrrenderer_render(retptr, this.__wbg_ptr, ptr0, len0, version, ecc, scale);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
             var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
             if (r2) {
                 throw takeObject(r1);
             }
-            return takeObject(r0);
+            return r0 >>> 0;
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
     }
-}
-if (Symbol.dispose) RaptorQDecoder.prototype[Symbol.dispose] = RaptorQDecoder.prototype.free;
-
-/**
- * @param {Uint8Array} data
- * @param {number} max_transport_payload_size
- * @param {number} repair_percent
- * @returns {Array<any>}
- */
-export function encode_packets(data, max_transport_payload_size, repair_percent) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_export);
-        const len0 = WASM_VECTOR_LEN;
-        wasm.encode_packets(retptr, ptr0, len0, max_transport_payload_size, repair_percent);
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        if (r2) {
-            throw takeObject(r1);
+    /**
+     * Generate a QR code in-place and write its raw module matrix to the
+     * fixed matrix buffer.
+     *
+     * Matrix values are one byte per module: 0 = light, 1 = dark.  The matrix
+     * does not include quiet-zone modules.  The valid byte region is
+     * `[matrix_ptr .. matrix_ptr + sideMods*sideMods)`.
+     * @param {Uint8Array} data
+     * @param {number} version
+     * @param {number} ecc
+     * @returns {number}
+     */
+    render_matrix(data, version, ecc) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_export);
+            const len0 = WASM_VECTOR_LEN;
+            wasm.qrrenderer_render_matrix(retptr, this.__wbg_ptr, ptr0, len0, version, ecc);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+            if (r2) {
+                throw takeObject(r1);
+            }
+            return r0 >>> 0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
         }
-        return takeObject(r0);
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+    /**
+     * Generate a QR code in-place and write RGBA pixels to the fixed buffer.
+     *
+     * # Parameters
+     * - `data`    – raw packet bytes to encode
+     * - `version` – QR version 1-40
+     * - `ecc`     – error correction level (0=L, 1=M, 2=Q, 3=H)
+     * - `scale`   – pixels per module (1-8)
+     *
+     * # Returns
+     * Side pixel count (`sidePx`).  The valid pixel region is
+     * `[buf_ptr .. buf_ptr + sidePx*sidePx*4)`.
+     *
+     * Throws a `JsValue` error string on failure.
+     * @param {Uint8Array} data
+     * @param {number} version
+     * @param {number} ecc
+     * @param {number} scale
+     * @returns {number}
+     */
+    render_rgba(data, version, ecc, scale) {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            const ptr0 = passArray8ToWasm0(data, wasm.__wbindgen_export);
+            const len0 = WASM_VECTOR_LEN;
+            wasm.qrrenderer_render_rgba(retptr, this.__wbg_ptr, ptr0, len0, version, ecc, scale);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+            if (r2) {
+                throw takeObject(r1);
+            }
+            return r0 >>> 0;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+     * Total capacity of the RGBA buffer in bytes.
+     * @returns {number}
+     */
+    rgba_len() {
+        const ret = wasm.qrrenderer_rgba_len(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Explicit raw pointer to the start of the RGBA buffer.
+     * @returns {number}
+     */
+    rgba_ptr() {
+        const ret = wasm.qrrenderer_rgba_ptr(this.__wbg_ptr);
+        return ret >>> 0;
     }
 }
+if (Symbol.dispose) QrRenderer.prototype[Symbol.dispose] = QrRenderer.prototype.free;
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,
         __wbg___wbindgen_throw_344f42d3211c4765: function(arg0, arg1) {
             throw new Error(getStringFromWasm0(arg0, arg1));
         },
-        __wbg_new_32b398fb48b6d94a: function() {
-            const ret = new Array();
-            return addHeapObject(ret);
-        },
-        __wbg_new_from_slice_77cdfb7977362f3c: function(arg0, arg1) {
-            const ret = new Uint8Array(getArrayU8FromWasm0(arg0, arg1));
-            return addHeapObject(ret);
-        },
-        __wbg_push_d2ae3af0c1217ae6: function(arg0, arg1) {
-            const ret = getObject(arg0).push(getObject(arg1));
-            return ret;
-        },
         __wbindgen_cast_0000000000000001: function(arg0, arg1) {
             // Cast intrinsic for `Ref(String) -> Externref`.
             const ret = getStringFromWasm0(arg0, arg1);
             return addHeapObject(ret);
         },
-        __wbindgen_object_drop_ref: function(arg0) {
-            takeObject(arg0);
-        },
     };
     return {
         __proto__: null,
-        "./qrstream_raptorq_wasm_bg.js": import0,
+        "./raptorqr_fast_qr_wasm_bg.js": import0,
     };
 }
 
-const RaptorQDecoderFinalization = (typeof FinalizationRegistry === 'undefined')
+const QrRendererFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry(ptr => wasm.__wbg_raptorqdecoder_free(ptr, 1));
+    : new FinalizationRegistry(ptr => wasm.__wbg_qrrenderer_free(ptr, 1));
 
 function addHeapObject(obj) {
     if (heap_next === heap.length) heap.push(heap.length + 1);
@@ -129,11 +208,6 @@ function dropObject(idx) {
     if (idx < 1028) return;
     heap[idx] = heap_next;
     heap_next = idx;
-}
-
-function getArrayU8FromWasm0(ptr, len) {
-    ptr = ptr >>> 0;
-    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
 }
 
 let cachedDataViewMemory0 = null;
@@ -270,7 +344,7 @@ async function __wbg_init(module_or_path) {
     }
 
     if (module_or_path === undefined) {
-        module_or_path = new URL('qrstream_raptorq_wasm_bg.wasm', import.meta.url);
+        module_or_path = new URL('raptorqr_fast_qr_wasm_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 

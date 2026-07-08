@@ -56,20 +56,18 @@ const zxingWriterWasmPath = join(
 const raptorqWasmPath = join(
   repoRoot,
   'packages',
-  'raptorqr-wasm',
+  'raptorqr-raptorq-wasm',
   'src',
-  'raptorq',
   'wasm',
-  'qrstream_raptorq_wasm_bg.wasm',
+  'raptorqr_raptorq_wasm_bg.wasm',
 );
 const fastQrWasmPath = join(
   repoRoot,
   'packages',
-  'raptorqr-wasm',
+  'raptorqr-fast-qr-wasm',
   'src',
-  'fast_qr',
   'wasm',
-  'qrstream_fast_qr_wasm_bg.wasm',
+  'raptorqr_fast_qr_wasm_bg.wasm',
 );
 
 // happy-dom's Response is not accepted by Node's instantiateStreaming; tests can
@@ -96,11 +94,11 @@ globalThis.fetch = async (input, init) => {
     return wasmResponse(url, zxingWriterWasmPath);
   }
 
-  if (url.includes('qrstream_raptorq_wasm_bg.wasm')) {
+  if (url.includes('raptorqr_raptorq_wasm_bg.wasm')) {
     return wasmResponse(url, raptorqWasmPath);
   }
 
-  if (url.includes('qrstream_fast_qr_wasm_bg.wasm')) {
+  if (url.includes('raptorqr_fast_qr_wasm_bg.wasm')) {
     return wasmResponse(url, fastQrWasmPath);
   }
 
@@ -124,8 +122,14 @@ function findRepoRoot(startDir: string): string {
 }
 
 async function wasmResponse(url: string, fallbackPath: string): Promise<Response> {
-  const localPath = viteFsPath(url);
-  const bytes = await readFile(localPath && existsSync(localPath) ? localPath : fallbackPath);
+  const explicitPath = viteFsPath(url) ?? repoRelativeFsPath(url);
+  const localPath = explicitPath ?? fallbackPath;
+
+  if (!existsSync(localPath)) {
+    throw new Error(`Unable to resolve test WASM asset: ${url} -> ${localPath}`);
+  }
+
+  const bytes = await readFile(localPath);
   const body = new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   return new Response(body, {
     headers: { 'Content-Type': 'application/wasm' },
@@ -139,4 +143,21 @@ function viteFsPath(url: string): string | null {
   if (idx < 0) return null;
   const rawPath = decodeURIComponent(url.slice(idx + marker.length));
   return normalize(rawPath);
+}
+
+function repoRelativeFsPath(url: string): string | null {
+  try {
+    const parsed = new URL(url, 'http://localhost');
+
+    if (parsed.protocol === 'file:') {
+      return normalize(fileURLToPath(parsed));
+    }
+
+    const relativePath = decodeURIComponent(parsed.pathname).replace(/^\/+/, '');
+    return relativePath ? normalize(join(repoRoot, relativePath)) : null;
+  } catch {
+    if (!url.startsWith('/')) return null;
+    const relativePath = decodeURIComponent(url).replace(/^\/+/, '');
+    return relativePath ? normalize(join(repoRoot, relativePath)) : null;
+  }
 }

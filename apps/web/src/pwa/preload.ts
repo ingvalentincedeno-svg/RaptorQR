@@ -1,5 +1,5 @@
-import fastQrWasmUrl from '@raptorqr/wasm/fast-qr/wasm/qrstream_fast_qr_wasm_bg.wasm?url';
-import raptorqWasmUrl from '@raptorqr/wasm/raptorq/wasm/qrstream_raptorq_wasm_bg.wasm?url';
+import fastQrWasmUrl from '@raptorqr/fast-qr-wasm/wasm/raptorqr_fast_qr_wasm_bg.wasm?url';
+import raptorqWasmUrl from '@raptorqr/raptorq-wasm/wasm/raptorqr_raptorq_wasm_bg.wasm?url';
 import {
   zxingReaderWasmUrl,
   zxingWriterWasmUrl,

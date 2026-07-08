@@ -17,7 +17,7 @@ export interface NodeWasmAsset {
   distFileName: string;
   /** Repo/package-relative source path kept for dev and npm source fallback. */
   sourceRelativePath: string;
-  /** Optional package export path, e.g. `@raptorqr/wasm/fast-qr/wasm/file.wasm`. */
+  /** Optional package export path, e.g. `@raptorqr/fast-qr-wasm/wasm/file.wasm`. */
   packageExport?: string;
   /** Optional absolute path override for local debugging. */
   envVar?: string;

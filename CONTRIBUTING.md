@@ -23,8 +23,9 @@ The repository includes precompiled WASM artifacts for convenience.
 If you update Rust/WASM wrappers, also update the related build script and manifest. Generated artifacts should stay under:
 
 ```text
-packages/raptorqr-wasm/src/fast_qr/wasm
-packages/raptorqr-wasm/src/raptorq/wasm
+packages/raptorqr-fast-qr-wasm/src/wasm
+packages/raptorqr-fast-qr-wasm/src/wasm
+packages/raptorqr-raptorq-wasm/src/wasm
 ```
 
 ## Pull Requests

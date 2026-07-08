@@ -6,7 +6,8 @@
   "type": "module",
   "dependencies": {
     "@raptorqr/core": "workspace:*",
-    "@raptorqr/wasm": "workspace:*",
+    "@raptorqr/fast-qr-wasm": "workspace:*",
+    "@raptorqr/raptorq-wasm": "workspace:*",
     "fflate": "^0.8.2",
     "preact": "10.29.4"
   },
