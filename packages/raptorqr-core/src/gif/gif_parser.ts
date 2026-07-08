@@ -1,5 +1,5 @@
 /**
- * Minimal GIF frame extractor for QR-over-GIF transfer system.
+ * Minimal GIF frame extractor for RaptorQR transfer system.
  *
  * Parses GIF87a/GIF89a format and extracts individual frame pixel data.
  * Handles the specific kind of GIFs we generate:
@@ -385,7 +385,7 @@ export function gifFrameToRgba(frame: GifFrame): Uint8ClampedArray {
 /**
  * Composite all GIF frames into a single RGBA canvas (handles disposal).
  *
- * For QR-over-GIF, each frame is a full image so compositing is simple:
+ * For RaptorQR, each frame is a full image so compositing is simple:
  * each frame replaces the entire canvas.
  *
  * @param gif - Parsed GIF data

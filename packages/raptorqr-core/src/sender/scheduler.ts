@@ -30,7 +30,7 @@ function seededShuffle<T>(arr: readonly T[], seed: number): T[] {
 }
 
 /**
- * Creates the final ordered frame sequence for QR-over-GIF transmission.
+ * Creates the final ordered frame sequence for RaptorQR transmission.
  *
  * Interleaves all symbols round-robin across generations. Systematic
  * symbols for all generations are sent before coded symbols.

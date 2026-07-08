@@ -10,6 +10,19 @@ Live demo: https://qr.linkto.host/
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Finfrost%2Fraptorqr)
 
+## Table of Contents
+
+* [Performance](#performance)
+* [Packages](#packages)
+* [Features](#features)
+* [FAQ](#faq)
+* [Development](#development)
+
+  * [Deploy Web App On Vercel](#deploy-web-app-on-vercel)
+* [CLI](#cli)
+* [WASM Artifacts](#wasm-artifacts)
+* [Implementation Notes](#implementation-notes)
+
 ## Performance
 
 RaptorQR uses the Rust [`cberner/raptorq`](https://github.com/cberner/raptorq) implementation of RaptorQ (RFC 6330), compiled to WASM, as its primary fountain-code codec. This project also compiles [`erwanvivien/fast_qr`](https://github.com/erwanvivien/fast_qr) to WASM for high-speed QR rendering, with a more feature-complete wrapper than the upstream WASM package, and uses ZXing WASM for scanning.
@@ -23,9 +36,9 @@ Measured examples:
 | V20 QR, 4-code parallel playback, 30 FPS  | up to 300 decoded QR symbols/s |
 | V30 QR, 4-code parallel playback, 30 FPS  |      100+ decoded QR symbols/s |
 | 95.2 KB file transfer (V30-L x 4QR@30fps) |       375 ms, about 254.0 KB/s |
-| 3.0 MB file transfer (V30-L x 4QR@30fps)  |                 about 100 KB/s |
+| 6.5 MB file transfer (V30-L x 4QR@30fps)  |        36 s, about 183.6 KB/s |
 
-The 95.2 KB and 3.0 MB file tests were measured on **iPhone 16 / Safari as QR scanner**. Actual speed depends on device camera quality, browser performance, lighting, QR size, QR version, playback rate, and scan settings.
+The 95.2 KB and 6.5 MB file tests were measured on **iPhone 16 / Safari as QR scanner**. Actual speed depends on device camera quality, browser performance, lighting, QR size, QR version, playback rate, and scan settings.
 
 The current RaptorQ WASM path is intended to be production-ready for local offline transfer workflows.
 
@@ -49,6 +62,17 @@ apps/web                 Preact/Vite web app
 * ZXing WASM QR scanning with configurable decoder settings
 * Parallel QR playback, live Canvas rendering, and optional GIF export
 * Adjustable QR version, ECC level, playback FPS, scan FPS, and repair overhead
+
+## FAQ
+
+### Can I use RaptorQR offline?
+
+Yes. The web app includes `sw.js` and is already PWA-ready. After the first load, you can open the same link again even without an internet connection.
+
+### Does RaptorQR upload my files anywhere?
+
+No. Transfers run locally in the browser or terminal. Files and text are encoded into animated QR codes on the sender side and decoded from the camera feed on the receiver side.
+
 
 ## Development
 

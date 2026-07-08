@@ -205,6 +205,17 @@ const S = {
     padding: '9px 10px',
     fontSize: 14,
   } as CSSProps,
+  hiddenInput: {
+    display: 'none',
+  } as CSSProps,
+  fileName: {
+    color: '#c9d1d9',
+    fontSize: 14,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap' as const,
+  } as CSSProps,
   warn: {
     background: '#3d2600',
     border: '1px solid #bb8009',
@@ -280,6 +291,7 @@ export function SenderPage() {
   const [fullscreenActive, setFullscreenActive] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const qrStageRef = useRef<HTMLDivElement | null>(null);
   const liveTransferRef = useRef<LiveTransfer | null>(null);
   const encodeWorkerRef = useRef<Worker | null>(null);
@@ -697,6 +709,10 @@ export function SenderPage() {
     resetOutput();
   }, [resetOutput]);
 
+  const handleChooseFile = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
   const handleQRVersionChange = useCallback((value: string) => {
     setQrVersion(parseQRVersionOption(value));
     resetOutput();
@@ -974,8 +990,24 @@ export function SenderPage() {
             onInput={(e) => handleTextChange((e.target as HTMLTextAreaElement).value)}
           />
         ) : (
-          <div style={{ marginTop: 10 }}>
-            <input type="file" onChange={handleFile} />
+          <div style={{ ...S.row, marginTop: 10 }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              style={S.hiddenInput}
+              onChange={handleFile}
+            />
+            <button
+              type="button"
+              style={S.btnSecondary}
+              disabled={encodingLive}
+              onClick={handleChooseFile}
+            >
+              Choose file
+            </button>
+            <span style={S.fileName} title={file?.name ?? ''}>
+              {file ? `${file.name} · ${formatBytes(file.size)}` : 'No file selected'}
+            </span>
           </div>
         )}
       </div>

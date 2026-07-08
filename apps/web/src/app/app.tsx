@@ -84,7 +84,7 @@ export function App() {
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <span style={styles.logo}>◈ QR-over-GIF</span>
+        <span style={styles.logo}>◈ RaptorQR</span>
         <nav style={styles.tabBar}>
           <button
             style={{ ...styles.tab, ...(tab === 'sender' ? styles.tabActive : {}) }}
