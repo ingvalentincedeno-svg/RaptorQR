@@ -4,7 +4,7 @@ import { encodeRaptorQPackets } from '@raptorqr/core/fec/raptorq_wasm';
 import {
   preprocessPayload,
   type PreprocessResult,
-} from '@raptorqr/core/sender/packetizer';
+} from '@raptorqr/core/sender/preprocess_payload';
 
 export interface RaptorQPacketizerResult {
   packets: Uint8Array[];

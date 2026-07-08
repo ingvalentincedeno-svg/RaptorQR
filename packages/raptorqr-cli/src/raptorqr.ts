@@ -18,9 +18,9 @@
 import { readFileSync, existsSync, openSync, closeSync } from 'fs';
 import { ReadStream } from 'tty';
 import { encodeQRCodeMatrix } from '@raptorqr/core/node';
-import { packetize } from '@raptorqr/core/sender/packetizer';
-import { scheduleFrames } from '@raptorqr/core/sender/scheduler';
-import { QR_VERSION, ECC_LEVEL } from '@raptorqr/core/protocol/constants';
+import { DEFAULT_RAPTORQ_REPAIR_PERCENT } from '@raptorqr/core/fec/codec';
+import { QR_VERSION, ECC_LEVEL, MAX_PAYLOAD_SIZE } from '@raptorqr/core/protocol/constants';
+import { packetizeRaptorQ } from '@raptorqr/core/sender/raptorq_packetizer';
 import {
   enterAltBuffer,
   exitAltBuffer,
@@ -144,14 +144,24 @@ function readInput(): InputResult {
 // Encode pipeline (reuse webapp protocol)
 // ─────────────────────────────────────────────────────────────────────────────────
 
-function buildFrames(
+async function buildFrames(
   data: Uint8Array,
   isText: boolean,
   filename?: string,
   mimeType?: string,
-): Uint8Array[] {
-  const result = packetize(data, isText, true, filename, mimeType);
-  return scheduleFrames(result.packets, result.totalGenerations);
+): Promise<Uint8Array[]> {
+  const result = await packetizeRaptorQ(
+    data,
+    isText,
+    true,
+    filename,
+    mimeType,
+    {
+      maxTransportPayloadSize: MAX_PAYLOAD_SIZE,
+      repairPercent: DEFAULT_RAPTORQ_REPAIR_PERCENT,
+    },
+  );
+  return result.packets;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────────
@@ -223,7 +233,7 @@ async function main() {
     process.exit(1);
   }
 
-  const packets = buildFrames(data, isText, filename, mimeType);
+  const packets = await buildFrames(data, isText, filename, mimeType);
 
   // Pre-render all QR matrices to terminal strings
   const frames: string[][] = [];

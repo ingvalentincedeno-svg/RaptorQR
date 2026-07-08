@@ -2,22 +2,31 @@
  * GIF roundtrip: encode data into GIF frames, parse them back, decode.
  */
 import { describe, it, expect } from 'vitest';
-import { packetize } from '@raptorqr/core/sender/packetizer';
-import { scheduleFrames } from '@raptorqr/core/sender/scheduler';
+import { DEFAULT_RAPTORQ_REPAIR_PERCENT } from '@raptorqr/core/fec/codec';
+import { RaptorQWasmDecoder } from '@raptorqr/core/fec/raptorq_wasm';
 import { renderQRCodeImageData } from '@raptorqr/core/qr/qr_encoder_browser';
 import { createQRGif } from '@raptorqr/core/gif/gif_render';
 import { parseGif, renderGifFrame } from '@raptorqr/core/gif/gif_parser';
 import { decodeQRFromCanvas } from '@raptorqr/core/qr/qr_decode';
 import { parsePacket } from '@raptorqr/core/protocol/packet';
-import { GenerationDecoder } from '@raptorqr/core/fec/rlnc_decoder';
-import { assemblePayload } from '@raptorqr/core/reconstruct/assemble';
-import { K, MAX_PAYLOAD_SIZE, QR_VERSION, ECC_LEVEL, FRAME_DELAY_MS } from '@raptorqr/core/protocol/constants';
+import { MAX_PAYLOAD_SIZE, QR_VERSION, ECC_LEVEL, FRAME_DELAY_MS } from '@raptorqr/core/protocol/constants';
+import { packetizeRaptorQ } from '@raptorqr/core/sender/raptorq_packetizer';
 
 describe('GIF Roundtrip', () => {
   it('should encode and decode a GIF', async () => {
     const data = new TextEncoder().encode('GIF roundtrip test data');
-    const result = packetize(data, false, false);
-    const frames = scheduleFrames(result.packets, result.totalGenerations);
+    const result = await packetizeRaptorQ(
+      data,
+      false,
+      false,
+      undefined,
+      undefined,
+      {
+        maxTransportPayloadSize: MAX_PAYLOAD_SIZE,
+        repairPercent: DEFAULT_RAPTORQ_REPAIR_PERCENT,
+      },
+    );
+    const frames = result.packets;
 
     // Generate QR image frames
     const imageFrames: Uint8Array[] = [];
@@ -37,9 +46,8 @@ describe('GIF Roundtrip', () => {
     const gifData = parseGif(gifBytes);
     expect(gifData.frames.length).toBe(frames.length);
 
-    // Decode frames from GIF
-    const decoder = new GenerationDecoder(K, MAX_PAYLOAD_SIZE);
-    const solvedGens = new Set<number>();
+    const decoder = await RaptorQWasmDecoder.create(result.dataLength, MAX_PAYLOAD_SIZE);
+    let decoded: Uint8Array | null = null;
 
     for (let i = 0; i < gifData.frames.length; i++) {
       const rgba = renderGifFrame(gifData, i);
@@ -48,26 +56,12 @@ describe('GIF Roundtrip', () => {
       expect(decodedQR, `GIF frame ${i} failed QR decode`).not.toBeNull();
 
       const pkt = parsePacket(decodedQR!.bytes);
-      const isSystematic = pkt.header.symbolIndex < K;
-      if (isSystematic) {
-        decoder.addSystematicSymbol(pkt.header.generationIndex, pkt.payload, pkt.header.symbolIndex);
-      } else {
-        decoder.addCodedSymbol(pkt.header.generationIndex, pkt.payload, pkt.header.symbolIndex - K);
-      }
-      if (decoder.isSolved(pkt.header.generationIndex)) {
-        solvedGens.add(pkt.header.generationIndex);
-      }
+      decoded = decoder.push(pkt.payload);
+      if (decoded) break;
     }
 
-    expect(solvedGens.size).toBeGreaterThanOrEqual(result.sourceGenerations);
-
-    const solvedMap = new Map<number, Uint8Array[]>();
-    for (const genIdx of solvedGens) {
-      solvedMap.set(genIdx, decoder.getSourceSymbols(genIdx)!);
-    }
-
-    const assembled = assemblePayload(solvedMap, result.totalGenerations, result.dataLength);
-    const recovered = new TextDecoder().decode(assembled);
+    expect(decoded).not.toBeNull();
+    const recovered = new TextDecoder().decode(decoded!.slice(0, result.dataLength));
     expect(recovered).toBe('GIF roundtrip test data');
   });
 });

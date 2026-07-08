@@ -49,6 +49,22 @@
       "import": "./src/wasm/*.ts"
     }
   },
+  "files": [
+    "src/browser.ts",
+    "src/node.ts",
+    "src/index.ts",
+    "src/fec/",
+    "src/gif/",
+    "src/preprocess/",
+    "src/protocol/",
+    "src/qr/",
+    "src/reconstruct/",
+    "src/sender/",
+    "src/types/",
+    "src/wasm/",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "@raptorqr/wasm": "workspace:*",
     "fflate": "^0.8.2",

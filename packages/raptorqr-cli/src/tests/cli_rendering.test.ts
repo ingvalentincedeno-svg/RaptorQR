@@ -13,6 +13,30 @@ function stripAnsi(str: string): string {
   return str.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
+async function packetizeCliRaptorQ(
+  data: Uint8Array,
+  isText: boolean,
+  compress: boolean,
+  filename?: string,
+  mimeType?: string,
+) {
+  const { DEFAULT_RAPTORQ_REPAIR_PERCENT } = await import('@raptorqr/core/fec/codec');
+  const { MAX_PAYLOAD_SIZE } = await import('@raptorqr/core/protocol/constants');
+  const { packetizeRaptorQ } = await import('@raptorqr/core/sender/raptorq_packetizer');
+
+  return packetizeRaptorQ(
+    data,
+    isText,
+    compress,
+    filename,
+    mimeType,
+    {
+      maxTransportPayloadSize: MAX_PAYLOAD_SIZE,
+      repairPercent: DEFAULT_RAPTORQ_REPAIR_PERCENT,
+    },
+  );
+}
+
 describe('Terminal Rasterizer', () => {
   it('should render a simple 2×2 matrix with default quiet zone', async () => {
     const { renderToTerminal } = await import('../terminal_raster');
@@ -187,24 +211,25 @@ The app uses the same transfer protocol as the web sender.
 });
 
 describe('CLI Encoder Pipeline', () => {
-  it('should produce the same frames as the web app (reuse common logic)', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+  it('should produce RaptorQ frames using the default sender codec', async () => {
     const {
       DEFAULT_CLI_QR_ENCODER,
       encodeQRCodeMatrix,
       isFastQrNodeAvailable,
     } = await import('@raptorqr/core/node');
-    const { QR_VERSION, ECC_LEVEL } = await import('@raptorqr/core/protocol/constants');
+    const { QR_VERSION, ECC_LEVEL, RAPTORQ_SYMBOL_INDEX } = await import('@raptorqr/core/protocol/constants');
     const { parseHeader } = await import('@raptorqr/core/protocol/packet');
 
     const data = new TextEncoder().encode('CLI test payload for verifying protocol reuse. '.repeat(3));
-    const result = packetize(data, false, true);
-    const ordered = scheduleFrames(result.packets, result.totalGenerations);
-    const genIndices = ordered.map((pkt) => parseHeader(pkt).generationIndex);
+    const result = await packetizeCliRaptorQ(data, false, true);
+    const ordered = result.packets;
+    const headers = ordered.map((pkt) => parseHeader(pkt));
 
     expect(DEFAULT_CLI_QR_ENCODER).toBe('fast-qr-wasm');
     expect(isFastQrNodeAvailable()).toBe(true);
+    expect(ordered.length).toBe(result.totalGenerations);
+    expect(headers.every((header) => header.symbolIndex === RAPTORQ_SYMBOL_INDEX)).toBe(true);
+    expect(headers.every((header) => header.generationIndex === 0)).toBe(true);
 
     for (const pkt of ordered) {
       const matrix = await encodeQRCodeMatrix(pkt, QR_VERSION, ECC_LEVEL);
@@ -212,7 +237,6 @@ describe('CLI Encoder Pipeline', () => {
       expect(matrix[0]!.length).toBe(57);
     }
 
-    expect(genIndices.every((g) => g >= 0 && g < result.totalGenerations)).toBe(true);
     expect(result.isCompressed).toBe(true);
     expect(result.dataLength).toBeGreaterThan(0);
   });
@@ -220,12 +244,9 @@ describe('CLI Encoder Pipeline', () => {
 
 describe('CLI Frame Cycle', () => {
   it('should loop through frames deterministically', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
-
     const data = new TextEncoder().encode('Frame cycle test — small payload');
-    const result = packetize(data, false, false);
-    const ordered = scheduleFrames(result.packets, result.totalGenerations);
+    const result = await packetizeCliRaptorQ(data, false, false);
+    const ordered = result.packets;
 
     expect(ordered.length).toBe(result.packets.length);
 
@@ -241,14 +262,12 @@ describe('CLI Frame Cycle', () => {
   });
 
   it('should generate valid QR matrix for every scheduled frame', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
     const { encodeQRCodeMatrix } = await import('@raptorqr/core/node');
     const { QR_VERSION, ECC_LEVEL } = await import('@raptorqr/core/protocol/constants');
 
     const data = new TextEncoder().encode('Every frame QR test — medium payload');
-    const result = packetize(data, false, true);
-    const ordered = scheduleFrames(result.packets, result.totalGenerations);
+    const result = await packetizeCliRaptorQ(data, false, true);
+    const ordered = result.packets;
 
     for (const pkt of ordered) {
       const matrix = await encodeQRCodeMatrix(pkt, QR_VERSION, ECC_LEVEL);
@@ -262,20 +281,26 @@ describe('CLI Frame Cycle', () => {
 
 describe('CLI Input Parsing', () => {
   it('should read file from argument and produce frames', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+    const { RAPTORQ_SYMBOL_INDEX } = await import('@raptorqr/core/protocol/constants');
     const { parseHeader } = await import('@raptorqr/core/protocol/packet');
 
     const fileData = new TextEncoder().encode('file content test');
-    const result = packetize(fileData, true, false);
-    const ordered = scheduleFrames(result.packets, result.totalGenerations);
-    const genIndices = ordered.map((pkt) => parseHeader(pkt).generationIndex);
+    const result = await packetizeCliRaptorQ(
+      fileData,
+      false,
+      false,
+      'sample.txt',
+      'text/plain',
+    );
+    const ordered = result.packets;
+    const headers = ordered.map((pkt) => parseHeader(pkt));
 
     expect(ordered.length).toBeGreaterThan(0);
-    expect(result.isText).toBe(true);
+    expect(result.isText).toBe(false);
     expect(result.isCompressed).toBe(false);
-    expect(result.dataLength).toBe(fileData.length);
-    expect(genIndices.length).toBe(ordered.length);
+    expect(result.dataLength).toBeGreaterThan(fileData.length);
+    expect(headers.length).toBe(ordered.length);
+    expect(headers.every((header) => header.symbolIndex === RAPTORQ_SYMBOL_INDEX)).toBe(true);
   });
 
   it('should handle empty input gracefully and provide error message', () => {

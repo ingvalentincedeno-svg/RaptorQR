@@ -1,12 +1,15 @@
 /**
- * Encode worker — receives raw data, compresses, packetizes, schedules.
+ * Encode worker — receives raw data, compresses, and packetizes.
  *
  * @module
  */
 
-import { packetize } from '@raptorqr/core/sender/packetizer';
 import { packetizeRaptorQ } from '@raptorqr/core/sender/raptorq_packetizer';
-import { scheduleFrames } from '@raptorqr/core/sender/scheduler';
+import {
+  packetizeLegacyRlnc,
+  scheduleLegacyRlncFrames,
+} from '@raptorqr/core/sender/legacy_rlnc';
+import { MAX_PAYLOAD_SIZE } from '@raptorqr/core/protocol/constants';
 import {
   DEFAULT_RAPTORQ_REPAIR_PERCENT,
   normalizeFecCodec,
@@ -75,7 +78,7 @@ async function handleEncode(input: EncodeInput): Promise<EncodeOutput> {
       input.filename,
       input.mimeType,
       {
-        maxTransportPayloadSize: input.symbolSize ?? 0,
+        maxTransportPayloadSize: input.symbolSize ?? MAX_PAYLOAD_SIZE,
         repairPercent: normalizeRaptorQRepairPercent(
           input.raptorqRepairPercent ?? DEFAULT_RAPTORQ_REPAIR_PERCENT,
         ),
@@ -94,7 +97,8 @@ async function handleEncode(input: EncodeInput): Promise<EncodeOutput> {
     };
   }
 
-  const result = packetize(
+  // Legacy JS RLNC is explicit only; do not use it as a RaptorQ fallback.
+  const result = packetizeLegacyRlnc(
     originalBytes,
     input.isText,
     input.compress,
@@ -102,7 +106,7 @@ async function handleEncode(input: EncodeInput): Promise<EncodeOutput> {
     input.mimeType,
     { symbolSize: input.symbolSize },
   );
-  const frames = scheduleFrames(result.packets, result.totalGenerations);
+  const frames = scheduleLegacyRlncFrames(result.packets, result.totalGenerations);
 
   return {
     type: 'encoded',

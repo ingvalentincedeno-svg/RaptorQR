@@ -421,7 +421,7 @@ describe('Payload Assembly', () => {
 
 describe('Packetizer', () => {
   it('should packetize text data', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
+    const { packetizeLegacyRlnc: packetize } = await import('@raptorqr/core/sender/legacy_rlnc');
     const { K } = await import('@raptorqr/core/protocol/constants');
     const { parseHeader } = await import('@raptorqr/core/protocol/packet');
 
@@ -448,7 +448,7 @@ describe('Packetizer', () => {
   });
 
   it('should packetize binary data across multiple generations', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
+    const { packetizeLegacyRlnc: packetize } = await import('@raptorqr/core/sender/legacy_rlnc');
     const { MAX_PAYLOAD_SIZE, K } = await import('@raptorqr/core/protocol/constants');
 
     const data = new Uint8Array(MAX_PAYLOAD_SIZE * K * 2 + 100);
@@ -470,7 +470,7 @@ describe('Packetizer', () => {
   });
 
   it('should compress large data', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
+    const { packetizeLegacyRlnc: packetize } = await import('@raptorqr/core/sender/legacy_rlnc');
 
     const text = 'a'.repeat(1000);
     const data = new TextEncoder().encode(text);
@@ -481,7 +481,7 @@ describe('Packetizer', () => {
   });
 
   it('should skip compression when it does not reduce payload size', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
+    const { packetizeLegacyRlnc: packetize } = await import('@raptorqr/core/sender/legacy_rlnc');
 
     let state = 0x12345678;
     const data = new Uint8Array(4096);
@@ -499,7 +499,7 @@ describe('Packetizer', () => {
   });
 
   it('should not generate unsafe outer RS parity for very large files', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
+    const { packetizeLegacyRlnc: packetize } = await import('@raptorqr/core/sender/legacy_rlnc');
     const {
       GF256_RS_MAX_EVALUATION_POINTS,
       K,
@@ -523,8 +523,10 @@ describe('Packetizer', () => {
 
 describe('Scheduler', () => {
   it('should schedule frames deterministically for same totalGenerations', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+    const {
+      packetizeLegacyRlnc: packetize,
+      scheduleLegacyRlncFrames: scheduleFrames,
+    } = await import('@raptorqr/core/sender/legacy_rlnc');
 
     const data = new TextEncoder().encode('Test data for scheduling');
     const result = packetize(data, false, false);
@@ -537,8 +539,10 @@ describe('Scheduler', () => {
   });
 
   it('should interleave generations round-robin', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+    const {
+      packetizeLegacyRlnc: packetize,
+      scheduleLegacyRlncFrames: scheduleFrames,
+    } = await import('@raptorqr/core/sender/legacy_rlnc');
     const { parseHeader } = await import('@raptorqr/core/protocol/packet');
     const { K } = await import('@raptorqr/core/protocol/constants');
 
@@ -576,8 +580,10 @@ describe('Scheduler', () => {
 
 describe('End-to-End', () => {
   it('should roundtrip a small text message', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+    const {
+      packetizeLegacyRlnc: packetize,
+      scheduleLegacyRlncFrames: scheduleFrames,
+    } = await import('@raptorqr/core/sender/legacy_rlnc');
     const { parsePacket } = await import('@raptorqr/core/protocol/packet');
     const { GenerationDecoder } = await import('@raptorqr/core/fec/rlnc_decoder');
     const { assemblePayload } = await import('@raptorqr/core/reconstruct/assemble');
@@ -618,8 +624,10 @@ describe('End-to-End', () => {
   });
 
   it('should roundtrip with a manually selected larger QR profile', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+    const {
+      packetizeLegacyRlnc: packetize,
+      scheduleLegacyRlncFrames: scheduleFrames,
+    } = await import('@raptorqr/core/sender/legacy_rlnc');
     const { parsePacket } = await import('@raptorqr/core/protocol/packet');
     const { GenerationDecoder } = await import('@raptorqr/core/fec/rlnc_decoder');
     const { assemblePayload } = await import('@raptorqr/core/reconstruct/assemble');
@@ -677,8 +685,10 @@ describe('End-to-End', () => {
   });
 
   it('should recover from lost frames', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+    const {
+      packetizeLegacyRlnc: packetize,
+      scheduleLegacyRlncFrames: scheduleFrames,
+    } = await import('@raptorqr/core/sender/legacy_rlnc');
     const { parsePacket } = await import('@raptorqr/core/protocol/packet');
     const { GenerationDecoder } = await import('@raptorqr/core/fec/rlnc_decoder');
     const { assemblePayload } = await import('@raptorqr/core/reconstruct/assemble');
@@ -719,8 +729,10 @@ describe('End-to-End', () => {
   });
 
   it('should recover with outer RS when some generations are entirely missing', async () => {
-    const { packetize } = await import('@raptorqr/core/sender/packetizer');
-    const { scheduleFrames } = await import('@raptorqr/core/sender/scheduler');
+    const {
+      packetizeLegacyRlnc: packetize,
+      scheduleLegacyRlncFrames: scheduleFrames,
+    } = await import('@raptorqr/core/sender/legacy_rlnc');
     const { parsePacket } = await import('@raptorqr/core/protocol/packet');
     const { GenerationDecoder } = await import('@raptorqr/core/fec/rlnc_decoder');
     const { assemblePayload } = await import('@raptorqr/core/reconstruct/assemble');

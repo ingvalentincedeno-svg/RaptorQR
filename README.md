@@ -144,6 +144,20 @@ echo "Hello, world!" | raptorqr
 raptorqr --serve --port 8080
 ```
 
+`raptorqr document.pdf` reads the local file, preserves the filename and MIME
+metadata, and displays a looping RaptorQ QR stream in the terminal. It does not
+upload the file, create a URL, or write a new output file; scan the QR stream
+with the RaptorQR receiver to reconstruct `document.pdf` on the receiving
+device.
+
+`echo "Hello, world!" | raptorqr` reads text from stdin and displays it as the
+same looping terminal QR stream.
+
+`raptorqr --serve --port 8080` starts a local static server for the built web
+app. Run `pnpm build` first, then open `http://localhost:8080`.
+
+Press `q` or `Ctrl-C` to stop the terminal QR sender.
+
 The CLI bundle is built at:
 
 ```text

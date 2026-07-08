@@ -5,8 +5,10 @@
  * with outer EC (any G of G+P generations) vs without (all G source gens).
  */
 import { describe, it, expect } from 'vitest';
-import { packetize } from '@raptorqr/core/sender/packetizer';
-import { scheduleFrames } from '@raptorqr/core/sender/scheduler';
+import {
+  packetizeLegacyRlnc as packetize,
+  scheduleLegacyRlncFrames as scheduleFrames,
+} from '@raptorqr/core/sender/legacy_rlnc';
 import { parsePacket } from '@raptorqr/core/protocol/packet';
 import { GenerationDecoder } from '@raptorqr/core/fec/rlnc_decoder';
 import { assemblePayload } from '@raptorqr/core/reconstruct/assemble';

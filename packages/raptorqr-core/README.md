@@ -1,0 +1,150 @@
+# @raptorqr/core
+
+Protocol, packetization, FEC, QR encode/decode, GIF, and reconstruction APIs for RaptorQR.
+
+Use this package for application code. It wraps the generated WASM package, owns the transport packet format, and keeps browser/Node loading details out of higher-level callers.
+
+## Entrypoints
+
+```ts
+import { ... } from '@raptorqr/core';
+import { ... } from '@raptorqr/core/browser';
+import { ... } from '@raptorqr/core/node';
+```
+
+Use the root entrypoint for environment-neutral protocol, FEC, sender, GIF, and reconstruction helpers.
+
+Use `@raptorqr/core/browser` when browser-only QR rendering/decoding is needed.
+
+Use `@raptorqr/core/node` from Node or the CLI. It initialises fast_qr from filesystem/package WASM bytes and exposes terminal-friendly QR matrix rendering.
+
+Subpath imports are available for:
+
+```text
+@raptorqr/core/fec/*
+@raptorqr/core/gif/*
+@raptorqr/core/preprocess/*
+@raptorqr/core/protocol/*
+@raptorqr/core/qr/*
+@raptorqr/core/reconstruct/*
+@raptorqr/core/sender/*
+@raptorqr/core/wasm/*
+```
+
+## Send With RaptorQ
+
+RaptorQ is the primary sender path for new transfers.
+
+```ts
+import { DEFAULT_RAPTORQ_REPAIR_PERCENT } from '@raptorqr/core/fec/codec';
+import { MAX_PAYLOAD_SIZE } from '@raptorqr/core/protocol/constants';
+import { packetizeRaptorQ } from '@raptorqr/core/sender/raptorq_packetizer';
+
+const bytes = new Uint8Array([1, 2, 3]);
+
+const result = await packetizeRaptorQ(
+  bytes,
+  false,                 // isText
+  true,                  // compress when it helps
+  'document.pdf',        // optional filename for file transfers
+  'application/pdf',     // optional MIME type for file transfers
+  {
+    maxTransportPayloadSize: MAX_PAYLOAD_SIZE,
+    repairPercent: DEFAULT_RAPTORQ_REPAIR_PERCENT,
+  },
+);
+
+for (const packet of result.packets) {
+  // Render each transport packet as a QR symbol.
+}
+```
+
+`result.packets` are complete RaptorQR transport packets: 8-byte header, RaptorQ payload, and CRC32C trailer.
+
+Important result fields:
+
+```ts
+result.packets;          // Uint8Array[] ready for QR rendering
+result.totalGenerations; // RaptorQ packet count in this path
+result.sourceGenerations;// estimated source packet count
+result.dataLength;       // preprocessed payload length
+result.isCompressed;     // whether deflate-raw was applied
+result.symbolSize;       // transport payload size used by the RaptorQ codec
+```
+
+## Decode RaptorQ Packets
+
+Use the packet parser to validate the transport wrapper, then pass each RaptorQ payload to the decoder.
+
+```ts
+import { RaptorQWasmDecoder } from '@raptorqr/core/fec/raptorq_wasm';
+import { parsePacket } from '@raptorqr/core/protocol/packet';
+
+const first = parsePacket(receivedPackets[0]!);
+const decoder = await RaptorQWasmDecoder.create(
+  first.header.dataLength,
+  first.payload.length,
+);
+
+let decoded: Uint8Array | null = null;
+
+for (const encoded of receivedPackets) {
+  const packet = parsePacket(encoded);
+  decoded = decoder.push(packet.payload);
+  if (decoded) break;
+}
+```
+
+If `first.header.compressed` is true, inflate the decoded preprocessed payload before presenting it. File metadata is preserved by the sender preprocessing layer.
+
+## Render QR Codes
+
+Browser:
+
+```ts
+import { renderQRCodeImageData } from '@raptorqr/core/browser';
+
+const imageData = await renderQRCodeImageData(
+  packet,
+  10,          // QR version
+  'M',         // ECC level
+  4,           // pixels per module
+  'fast-qr-wasm',
+);
+```
+
+Node/CLI:
+
+```ts
+import { encodeQRCodeMatrix } from '@raptorqr/core/node';
+
+const matrix = await encodeQRCodeMatrix(packet, 10, 'M');
+```
+
+`matrix` is `boolean[][]`, where `true` is a dark QR module.
+
+## Decode QR Codes
+
+Browser decoding is exposed from the QR modules:
+
+```ts
+import { decodeQRFromCanvas } from '@raptorqr/core/qr/qr_decode';
+
+const decoded = await decodeQRFromCanvas(imageData);
+if (decoded) {
+  const bytes = decoded.bytes;
+}
+```
+
+## Legacy JS RLNC
+
+The JS RLNC sender path is deprecated and is never used as a RaptorQ fallback. It remains available only through the explicit legacy entrypoint:
+
+```ts
+import {
+  packetizeLegacyRlnc,
+  scheduleLegacyRlncFrames,
+} from '@raptorqr/core/sender/legacy_rlnc';
+```
+
+Keep new sender code on `packetizeRaptorQ`. The legacy module is intentionally isolated so it can be removed later without touching the RaptorQ path.
