@@ -17,8 +17,6 @@ Live demo: https://qr.linkto.host/
 * [Features](#features)
 * [FAQ](#faq)
 * [Development](#development)
-
-  * [Deploy Web App On Vercel](#deploy-web-app-on-vercel)
 * [CLI](#cli)
 * [WASM Artifacts](#wasm-artifacts)
 * [Implementation Notes](#implementation-notes)
@@ -36,9 +34,11 @@ Measured examples:
 | V20 QR, 4-code parallel playback, 30 FPS  | up to 300 decoded QR symbols/s |
 | V30 QR, 4-code parallel playback, 30 FPS  |      100+ decoded QR symbols/s |
 | 95.2 KB file transfer (V30-L x 4QR@30fps) |       375 ms, about 254.0 KB/s |
-| 6.5 MB file transfer (V30-L x 4QR@30fps)  |        36 s, about 183.6 KB/s |
+| 6.5 MB file transfer (V30-L x 4QR@30fps)  |         36 s, about 183.6 KB/s |
 
-The 95.2 KB and 6.5 MB file tests were measured on **iPhone 16 / Safari as QR scanner**. Actual speed depends on device camera quality, browser performance, lighting, QR size, QR version, playback rate, and scan settings.
+<img width="295" height="203" alt="clipboard_2026-07-08_17-21" src="https://github.com/user-attachments/assets/a5d5fced-8042-447a-ba58-00c42ee107f6" />
+
+The 95.2 KB and 6.5 MB file tests were measured on **iPhone 16 / Safari as QR scanner** as 'lab results'. Actual speed depends on device camera quality, browser performance, lighting, QR size, QR version, playback rate, and scan settings.
 
 The current RaptorQ WASM path is intended to be production-ready for local offline transfer workflows.
 
