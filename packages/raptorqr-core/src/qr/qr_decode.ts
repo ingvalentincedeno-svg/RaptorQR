@@ -6,9 +6,16 @@
  * package's default CDN path.
  */
 import {
+  BINARIZERS,
+  CHARACTER_SETS,
+  EAN_ADD_ON_SYMBOLS,
+  TEXT_MODES,
+  encodeFormats,
   prepareZXingModule,
-  readBarcodes,
-  type ReaderOptions,
+  type ZXingReaderModule,
+  type ZXingReaderOptions,
+  type ZXingReadResult,
+  type ZXingVector,
 } from 'zxing-wasm/reader';
 import { zxingReaderWasmUrl } from '@raptorqr/core/qr/zxing_assets';
 import {
@@ -27,17 +34,20 @@ export type QrDecodeOptions = Partial<Omit<QrDecodeSettings, 'maxSymbols'>> & {
   maxSymbols?: number;
 };
 
-const READER_OPTIONS: ReaderOptions = {
-  formats: ['QRCode'],
-  binarizer: DEFAULT_DECODE_SETTINGS.binarizer,
-  tryHarder: DEFAULT_DECODE_SETTINGS.tryHarder,
-  tryRotate: DEFAULT_DECODE_SETTINGS.tryRotate,
-  tryInvert: DEFAULT_DECODE_SETTINGS.tryInvert,
-  tryDownscale: DEFAULT_DECODE_SETTINGS.tryDownscale,
-  downscaleFactor: DEFAULT_DECODE_SETTINGS.downscaleFactor,
-  textMode: 'Plain',
+type DeletableZXingVector<T> = ZXingVector<T> & {
+  delete?: () => void;
 };
 
+type RuntimeZXingReaderModule = ZXingReaderModule & {
+  HEAPU8: Uint8Array;
+  _malloc: (size: number) => number;
+  _free: (ptr: number) => void;
+};
+
+const QR_ONLY_FORMATS = encodeFormats(['QRCode']);
+const EAN_ADD_ON_IGNORE = EAN_ADD_ON_SYMBOLS.indexOf('Ignore');
+const TEXT_MODE_PLAIN = TEXT_MODES.indexOf('Plain');
+const CHARACTER_SET_UNKNOWN = CHARACTER_SETS.indexOf('Unknown');
 const DEFAULT_MAX_QR_SYMBOLS = 4;
 const MAX_QR_SYMBOLS = 8;
 const SINGLE_QR_DECODE_OPTIONS: Required<QrDecodeOptions> = {
@@ -46,7 +56,8 @@ const SINGLE_QR_DECODE_OPTIONS: Required<QrDecodeOptions> = {
   maxSymbols: 1,
 };
 
-let preparePromise: Promise<unknown> | null = null;
+let preparePromise: Promise<RuntimeZXingReaderModule> | null = null;
+let grayscaleScratch: Uint8Array | null = null;
 
 /**
  * Decode a QR code from an `ImageData` object (e.g. from a `<canvas>`).
@@ -115,39 +126,109 @@ async function decodeImageData(
   imageData: ImageData,
   options: Required<QrDecodeOptions>,
 ): Promise<QrDecodeResult[]> {
-  await prepareReader();
-  const results = await readBarcodes(imageData, {
-    ...READER_OPTIONS,
-    binarizer: options.binarizer,
+  const reader = await prepareReader();
+  return readQRCodesWithManualRelease(reader, imageData, options);
+}
+
+function prepareReader(): Promise<RuntimeZXingReaderModule> {
+  if (!preparePromise) {
+    preparePromise = prepareZXingModule({
+      overrides: {
+        locateFile: (path: string) => path.endsWith('.wasm') ? zxingReaderWasmUrl : path,
+      },
+      equalityFn: Object.is,
+      fireImmediately: true,
+    }) as Promise<RuntimeZXingReaderModule>;
+  }
+  return preparePromise;
+}
+
+function readQRCodesWithManualRelease(
+  reader: RuntimeZXingReaderModule,
+  imageData: ImageData,
+  options: Required<QrDecodeOptions>,
+): QrDecodeResult[] {
+  const grayscale = rgbaToGrayscale(imageData);
+  const bufferPtr = reader._malloc(grayscale.byteLength);
+  if (!bufferPtr) {
+    throw new Error(`Failed to allocate ${grayscale.byteLength} bytes in WASM memory`);
+  }
+
+  let results: DeletableZXingVector<ZXingReadResult> | null = null;
+  try {
+    reader.HEAPU8.set(grayscale, bufferPtr);
+    results = reader.readBarcodesFromPixmap(
+      bufferPtr,
+      imageData.width,
+      imageData.height,
+      toZXingReaderOptions(options),
+    ) as DeletableZXingVector<ZXingReadResult>;
+
+    const decoded: QrDecodeResult[] = [];
+    for (let index = 0; index < results.size(); index++) {
+      const result = results.get(index);
+      if (!result?.isValid || result.symbology !== 'QRCode' || result.bytes.length === 0) {
+        continue;
+      }
+      decoded.push({
+        bytes: new Uint8Array(result.bytes),
+        version: parseQRVersion(result.version, result.extra),
+      });
+    }
+    return decoded;
+  } finally {
+    results?.delete?.();
+    reader._free(bufferPtr);
+  }
+}
+
+function rgbaToGrayscale(imageData: ImageData): Uint8Array {
+  const pixelCount = imageData.width * imageData.height;
+  const expectedLength = pixelCount * 4;
+  if (imageData.data.length !== expectedLength) {
+    throw new Error(
+      `ImageData size mismatch: expected ${expectedLength} RGBA bytes, got ${imageData.data.length}`,
+    );
+  }
+
+  if (!grayscaleScratch || grayscaleScratch.length < pixelCount) {
+    grayscaleScratch = new Uint8Array(pixelCount);
+  }
+
+  const gray = grayscaleScratch.subarray(0, pixelCount);
+  const rgba = imageData.data;
+  for (let pixel = 0, offset = 0; pixel < pixelCount; pixel++, offset += 4) {
+    gray[pixel] = (306 * rgba[offset]! + 601 * rgba[offset + 1]! + 117 * rgba[offset + 2]! + 512) >> 10;
+  }
+  return gray;
+}
+
+function toZXingReaderOptions(options: Required<QrDecodeOptions>): ZXingReaderOptions {
+  return {
+    formats: QR_ONLY_FORMATS,
     tryHarder: options.tryHarder,
     tryRotate: options.tryRotate,
     tryInvert: options.tryInvert,
     tryDownscale: options.tryDownscale,
+    tryDenoise: false,
+    binarizer: encodeBinarizer(options.binarizer),
+    isPure: false,
+    downscaleThreshold: 500,
     downscaleFactor: options.downscaleFactor,
+    minLineCount: 2,
     maxNumberOfSymbols: clampMaxSymbols(options.maxSymbols),
-  });
-
-  return results
-    .filter((item) => item.isValid && item.symbology === 'QRCode' && item.bytes.length > 0)
-    .map((result) => ({
-      bytes: new Uint8Array(result.bytes),
-      version: parseQRVersion(result.version, result.extra),
-    }));
+    validateOptionalChecksum: false,
+    returnErrors: false,
+    eanAddOnSymbol: EAN_ADD_ON_IGNORE,
+    textMode: TEXT_MODE_PLAIN,
+    characterSet: CHARACTER_SET_UNKNOWN,
+    tryCode39ExtendedMode: true,
+  };
 }
 
-function prepareReader(): Promise<unknown> {
-  if (!preparePromise) {
-    preparePromise = Promise.resolve(
-      prepareZXingModule({
-        overrides: {
-          locateFile: (path: string) => path.endsWith('.wasm') ? zxingReaderWasmUrl : path,
-        },
-        equalityFn: Object.is,
-        fireImmediately: true,
-      }),
-    );
-  }
-  return preparePromise;
+function encodeBinarizer(binarizer: QrDecodeSettings['binarizer']): number {
+  const index = BINARIZERS.indexOf(binarizer);
+  return index >= 0 ? index : BINARIZERS.indexOf(DEFAULT_DECODE_SETTINGS.binarizer);
 }
 
 function parseQRVersion(version: string, extra: string): number {
