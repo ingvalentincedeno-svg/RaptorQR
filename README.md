@@ -20,6 +20,8 @@ Live demo: https://qr.linkto.host/
 * [CLI](#cli)
 * [WASM Artifacts](#wasm-artifacts)
 * [Implementation Notes](#implementation-notes)
+* [Links & Acknowledgements](#links--acknowledgements)
+
 
 ## Performance
 
@@ -192,3 +194,22 @@ The protocol keeps the existing fixed 8-byte transport header. RaptorQ packets u
 `wasm-raptorq` is the default FEC codec. `js-rlnc` is still exported and test-covered, but it is deprecated and is never used as an automatic fallback.
 
 For a deeper protocol and package overview, see [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Links & Acknowledgements
+
+RaptorQR stands on the shoulders of excellent open-source projects and developer communities.
+
+### Open-source projects used
+
+* [cberner/raptorq](https://github.com/cberner/raptorq) — RaptorQ / RFC 6330 fountain-code implementation used by the WASM FEC codec.
+* [erwanvivien/fast_qr](https://github.com/erwanvivien/fast_qr) — high-speed QR code rendering library compiled to WASM.
+* [Sec-ant/zxing-wasm](https://github.com/Sec-ant/zxing-wasm) — ZXing-C++ WebAssembly build used for QR/barcode scanning.
+* [ZXing-C++](https://github.com/zxing-cpp/zxing-cpp) — C++ port of ZXing, the underlying barcode image processing library.
+* [ZXing](https://github.com/zxing/zxing) — the original open-source multi-format barcode scanning project.
+* [Preact](https://preactjs.com/) — lightweight UI framework used by the web app.
+* [Vite](https://vite.dev/) — frontend build tool and development server.
+* [pnpm](https://pnpm.io/) — package manager used for the monorepo workspace.
+
+### Community
+
+* [LINUX DO](https://linux.do/) — a friendly developer community.
